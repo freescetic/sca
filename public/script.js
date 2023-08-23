@@ -8,27 +8,19 @@ document.addEventListener('DOMContentLoaded', () => {
   sendButton.addEventListener('click', () => {
       const message = messageInput.value;
       if (message.trim() !== '') {
-          // Create a message box element
-          const messageBox = document.createElement('div');
-          messageBox.className = 'message-box';
-          messageBox.textContent = message;
-
-          // Append the message box to the messages container
-          messages.appendChild(messageBox);
-
-          // Emit the message to the server
-          socket.emit('chat message', message);
+          // Emit the message to the server with a "sent" flag
+          socket.emit('chat message', { message, type: 'sent' });
 
           // Clear the input field
           messageInput.value = '';
       }
   });
 
-  socket.on('chat message', (message) => {
-      // Create a message box element for received messages
+  socket.on('chat message', (data) => {
+      // Create a message box element based on the message type (sent or received)
       const messageBox = document.createElement('div');
-      messageBox.className = 'message-box';
-      messageBox.textContent = message;
+      messageBox.className = `message-box ${data.type}`;
+      messageBox.textContent = data.message;
 
       // Append the message box to the messages container
       messages.appendChild(messageBox);
