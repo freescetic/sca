@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chat app using Socket IO and Node JS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+    <h1 class="font-bold text-blue-500 text-3xl text-center mt-5">
+        AjayVikhram's Chat App
+    </h1>
+    <div>
+        <h2 class="font-semibold text-xl text-center mt-5" id="logo">
+            Chat App using Socket io
+        </h2>
+    </div>
+    <form class="flex flex-col justify-center items-center mt-5" id="form">
+        <input class="border border-gray-400 rounded-md mt-5 p-1" type="text" placeholder="Name" id="myname">
+        <input class="border border-gray-400 rounded-md mt-5 p-1" type="text" placeholder="Message" id="message">
+        <button class="bg-blue-500 rounded-md p-2 text-white mt-5">Send</button>
+    </form>
+    <div class="flex flex-col justify-center items-center mt-5" id="messageArea">
+    </div>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    let socket = io();
+    let form = document.getElementById('form');
+    let myname = document.getElementById('myname');
+    let message = document.getElementById('message');
+    let messageArea = document.getElementById("messageArea");
+
+    // Define a dictionary for word-to-emoji mapping
+    const emojiDictionary = {
+        ":)": "😀",
+        ":D": "😃",
+        ":(": "😞",
+        // Add more mappings as needed
+    };
+
+    // Slash command parser
+    function parseSlashCommand(input) {
+        if (input.startsWith('/')) {
+            const parts = input.split(' ');
+            const command = parts[0].toLowerCase();
+            const args = parts.slice(1);
+            return { command, args };
+        }
+        return null;
+    }
+
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        if (message.value) {
+            const messageText = message.value;
+
+            // Check for slash commands
+            const slashCommand = parseSlashCommand(messageText);
+            if (slashCommand) {
+                handleSlashCommand(slashCommand);
+            } else {
+                // Replace words with emojis
+                const messageTextWithEmojis = messageText.replace(/:D|:\)|:\(/g, match => emojiDictionary[match] || match);
+                socket.emit('send name', myname.value);
+                socket.emit('send message', messageTextWithEmojis);
+            }
+
+            message.value = "";
+        }
+    });
+
+    // Handle slash commands
+    function handleSlashCommand(command) {
+        switch (command.command) {
+            case '/help':
+                // Display a list of available commands
+                displayHelpMessage();
+                break;
+            case '/clear':
+                // Clear the message area
+                clearMessageArea();
+                break;
+            default:
+                // Unknown command
+                sendMessage("Unknown command. Type /help for a list of commands.");
+                break;
+        }
+    }
+
+    // Display a list of available commands
+    function displayHelpMessage() {
+        sendMessage("Available commands:");
+        sendMessage("/help - Display this help message");
+        sendMessage("/clear - Clear the message area");
+    }
+
+    // Clear the message area
+    function clearMessageArea() {
+        messageArea.innerHTML = "";
+    }
+
+    // Send a message to the chat
+    function sendMessage(text) {
+        let chatContent = document.createElement("p");
+        chatContent.textContent = text;
+        messageArea.appendChild(chatContent);
+    }
+
+    socket.on("send name", (username) => {
+        let name = document.createElement("p");
+        name.style.backgroundColor = "grey";
+        name.style.width = "100%";
+        name.style.textAlign = "center";
+        name.style.color = "white";
+        name.textContent = username + ":";
+        messageArea.appendChild(name);
+    });
+
+    socket.on("send message", (chat) => {
+        let chatContent = document.createElement("p");
+        chatContent.textContent = chat;
+        messageArea.appendChild(chatContent);
+    });
+</script>
+
+</html>
